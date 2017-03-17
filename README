@@ -5,6 +5,28 @@ A slight modification to Rijndael (AES).
 
 Preprint: https://link.to.arxiv/Rijndael-EK
 
+## About
+
+1. Rijndael-EK is a simplification of AES-256 which removes a source of weakness, namely, the Rijndael-256 Key Schedule.
+   A Key Schedule is the piece of a block cipher that is used to derive (or _expand_) a number of _round keys_ (the number of which could vary) from the original key/password.
+   The three variants of AES all have a fixed number of rounds. AES-128 has 10, AES-192 has 12, and AES-256 has 14.
+   Since the number of rounds is fixed, it is possible to replace the Key Schedule with something else.
+
+2. Instruction Set Compatibility
+  * Sun/SPARC/PKCS11: Our modification resides below the PKCS#11 CK_MECHANISM type and CK_DecryptInit(), so direct use through PKCS#11 is unlikely to be possible. openCryptoki may have some clues as to how to proceed.
+  * Intel AES-NI: Simply remove the use of the **AESKEYGENASSIST** instruction and add the new key to xmm2/m128.
+
+3. Rijndael-EK is faster than AES-256
+  * Encryption/Decryption operations faster when switching keys
+
+4. Rijndael-EK is smaller than AES-256
+  * Memory footprint is decreased, and less complexity
+
+5. Rijndael-EK is stronger than AES-256
+  * It has been noted that the Key Schedule design for AES-256 is weaker than _the design_ for AES-128. That vulnerability has been removed.
+  * Keyspace strengthened from 2^256 to 2^1536
+  * Decreased complexity means decreased attack surface for side-channel attacks
+
 ## Building
 
 ```
@@ -14,7 +36,42 @@ make check
 
 ## Usage
 
+1. General Use
+```C
+/* Most modes-of-operation can be written as a wrapper around ECB */
+bool RijndaelEK_ECB_encrypt(const uint8_t* key, const uint8_t* plaintext, uint8_t* ciphertext)
+bool RijndaelEK_ECB_decrypt(const uint8_t* key, uint8_t* plaintext, const uint8_t* ciphertext)
+/* ECB Mode (no mode) */
+bool RijndaelEK_ECB_encrypt_buffer(const uint8_t* key, const uint8_t* plaintext, const size_t len, uint8_t* ciphertext)
+bool RijndaelEK_ECB_decrypt_buffer(const uint8_t* key, uint8_t* ciphertext, const size_t len, const uint8_t* ciphertext)
+/* Counter Mode: 128-bit nonce, counter XOR into nonce for each block */
+bool RijndaelEK_CTR_encrypt_buffer(const uint8_t* key, const uint8_t* nonce, const uint8_t* plaintext, const size_t len, uint8_t* ciphertext)
+bool RijndaelEK_CTR_decrypt_buffer(const uint8_t* key, const uint8_t* nonce, uint8_t* ciphertext, const size_t len, const uint8_t* ciphertext)
+```
+
+2. Use in Volume Encryption
+   We advise using RijndaelEK_CTR_encrypt_buffer() and RijndaelEK_CTR_decrypt_buffer() with a file-specific identifier for the nonce (e.g. inode number)
+   In addition, we have provided two functions to support partial operations on files (i.e. seek-and-decrypt), where counterStart would be the offset (in 16-byte blocks)
+   into the file.
+```C
+bool RijndaelEK_CTR_decrypt_buffer_offset(const uint8_t* key, const uint8_t* nonce, const uint8_t* counterStart, const uint8_t* plaintext, const size_t len, uint8_t* ciphertext)
+bool RijndaelEK_CTR_decrypt_buffer_offset(const uint8_t* key, const uint8_t* nonce, const uint8_t* counterStart, const uint8_t* plaintext, const size_t len, uint8_t* ciphertext)
+/* `offset` here is the same as used in fseek(), or number of bytes into the stream */
+const uint8_t* RijndaelEK_counterStart_for_byte(const unsigned long offset)
+```
+
 ## License
 
+This implementation is available under the license:
+**Creative Commons Attribution 4.0 International Public License** (CC BY 4.0)
+and should include this message until the end of text.
 
+License: https://creativecommons.org/licenses/by/4.0/
+License: https://creativecommons.org/licenses/by/4.0/legalcode
 
+Project Homepage (authoratative): http://www.cs.odu.edu/~cmorris/?p=Rijndael-EK
+Project Homepage (secondary):     https://github.com/apaxmai/Rijndael-EK
+
+Rijndael was submitted to NIST as Federal Information Processing Standard for AES, and is officially declared by authors to be patent free.
+
+EOT
