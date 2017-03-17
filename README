@@ -1,0 +1,20 @@
+
+# Rijndael-EK
+
+A slight modification to Rijndael (AES).
+
+Preprint: https://link.to.arxiv/Rijndael-EK
+
+## Building
+
+```
+make
+make check
+```
+
+## Usage
+
+## License
+
+
+
