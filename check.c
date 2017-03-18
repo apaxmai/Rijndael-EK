@@ -1,6 +1,8 @@
 
 
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <dirent.h>
 
@@ -13,6 +15,7 @@ int main(int argc, char **argv)
 {
 
 	unsigned int totalTests, testsPassed, testsFailed;
+	bool testPassed;
 	DIR *testsDirPtr;
 	struct dirent *testsDirEntry = NULL;
 
@@ -28,12 +31,25 @@ int main(int argc, char **argv)
 
 	while ((testsDirEntry = readdir(testsDirPtr))) {
 		if (testsDirEntry->d_name[0] != '.') {
-			printf("Running Test: %s\n", testsDirEntry->d_name);
+			testPassed = false;
+			++totalTests;
+			printf("Running Test: %s..", testsDirEntry->d_name);
+
 			// x/key  x/plaintext  x/ciphertext
+
+			if (testPassed) {
+				printf(". Passed.\n");
+				++testsPassed;
+			} else {
+				printf(". FAILED!\n");
+				++testsFailed;
+			}
 		}
 	}
 
 	closedir(testsDirPtr);
+
+	printf("Test Summary:\n\tTotal Tests:%i\n\tPassed: %i\n\tFailed: %i\n", totalTests, testsPassed, testsFailed);
 
 	return 0;
 }
